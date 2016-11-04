@@ -13,6 +13,10 @@
 ; named memory allocation and initialization
 .DATA
 
+	; Named memory locations that will be passed to our macro to test it
+	testCharacter1 BYTE 'h'
+	testCharacter2 BYTE 'y'
+
 ; procedure code
 .CODE
 
@@ -20,6 +24,11 @@
 
 toUpper	MACRO addressOfByteToChange
 	
+	; We're using BYTES because we're working with ASCII characters
+	; This is an UNSIGNED problem, because ASCII characters are unsigned
+	; (although it doesn't technically matter because the sign bit of an ASCII
+	;  character is always 0).
+
 	; LOGIC:
 	; check if character is lower case
 	; ( 'a' <= character <= 'z')
@@ -28,19 +37,27 @@ toUpper	MACRO addressOfByteToChange
 LOCAL ifNotLowerCase
 	
 	pushfd			; save the EFLAGS register - we will be subtracting, which will change EFLAGS
-	push eax		; save EAX - we use to hold the character we are converting to uppercase
+	push eax		; save EAX - we use AL to hold the character we are converting to uppercase
+					; ALWAYS PUSH/POP DWORDS
 
-	mov eax, DWORD PTR [addressOfByteToChange]
+	; get the value at the passed address
 
-	cmp eax, 'a'	; (character < 'a') ?
+	mov al, BYTE PTR [addressOfByteToChange]
+
+	cmp al, 'a'		; (character < 'a') ?
 	jb ifNotLowerCase
 
-	cmp eax, 'z'	; (character > 'z') ?
+	cmp al, 'z'		; (character > 'z') ?
 	ja ifNotLowerCase
 
 	; lower case letters are located 20h higher in the ASCII table,
 	; so subtracting 20h from a lower case letter will change it to upper case.
+	
 	sub eax, 20h
+
+	; store uppercase character at the given address
+	
+	mov BYTE PTR [addressOfByteToChange], al
 
 ifNotLowerCase:
 	; nothing to do - clean up
@@ -54,7 +71,17 @@ ifNotLowerCase:
 
 main	PROC
 	
+	; Use NOP to avoid VisualStudio articles
 
+	nop
+
+	toUpper testCharacter1
+
+	nop
+
+	toUpper testCharacter1
+
+	nop
 
 	mov eax, 0
 	ret

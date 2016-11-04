@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 11.00.50727.1	    02/11/15 15:29:14
+Microsoft (R) Macro Assembler Version 11.00.61030.0	    11/03/16 18:06:25
 main.asm						     Page 1 - 1
 
 
@@ -17,20 +17,117 @@ main.asm						     Page 1 - 1
 				; named memory allocation and initialization
  00000000			.DATA
 
+					; Named memory locations that will be passed to our macro to test it
+ 00000000 68				testCharacter1 BYTE 'h'
+ 00000001 79				testCharacter2 BYTE 'y'
+
 				; procedure code
  00000000			.CODE
- 00000000			main	PROC
 
- 00000000  B8 00000000			mov eax, 0
- 00000005  C3				ret
- 00000006			main	ENDP
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+				toUpper	MACRO addressOfByteToChange
+					
+					; We're using BYTES because we're working with ASCII characters
+					; This is an UNSIGNED problem, because ASCII characters are unsigned
+					; (although it doesn't technically matter because the sign bit of an ASCII
+					;  character is always 0).
+
+					; LOGIC:
+					; check if character is lower case
+					; ( 'a' <= character <= 'z')
+					;	if so, subtract 20h (make upper case)
+
+				LOCAL ifNotLowerCase
+					
+					pushfd			; save the EFLAGS register - we will be subtracting, which will change EFLAGS
+					push eax		; save EAX - we use AL to hold the character we are converting to uppercase
+									; ALWAYS PUSH/POP DWORDS
+
+					; get the value at the passed address
+
+					mov al, BYTE PTR [addressOfByteToChange]
+
+					cmp al, 'a'		; (character < 'a') ?
+					jb ifNotLowerCase
+
+					cmp al, 'z'		; (character > 'z') ?
+					ja ifNotLowerCase
+
+					; lower case letters are located 20h higher in the ASCII table,
+					; so subtracting 20h from a lower case letter will change it to upper case.
+					
+					sub eax, 20h
+
+					; store uppercase character at the given address
+					
+					mov BYTE PTR [addressOfByteToChange], al
+
+				ifNotLowerCase:
+					; nothing to do - clean up
+
+					pop eax			; restore EAX
+					popfd			; restore EFLAGS
+
+						ENDM
+
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ 00000000			main	PROC
+					
+					; Use NOP to avoid VisualStudio articles
+
+ 00000000  90				nop
+
+					toUpper testCharacter1
+ 00000001  9C		     1		pushfd			; save the EFLAGS register - we will be subtracting, which will change EFLAGS
+ 00000002  50		     1		push eax		; save EAX - we use AL to hold the character we are converting to uppercase
+ 00000003  A0 00000000 R     1		mov al, BYTE PTR [testCharacter1]
+ 00000008  3C 61	     1		cmp al, 'a'		; (character < 'a') ?
+ 0000000A  72 0C	     1		jb ??0000
+ 0000000C  3C 7A	     1		cmp al, 'z'		; (character > 'z') ?
+ 0000000E  77 08	     1		ja ??0000
+ 00000010  83 E8 20	     1		sub eax, 20h
+ 00000013  A2 00000000 R     1		mov BYTE PTR [testCharacter1], al
+ 00000018		     1	??0000:
+ 00000018  58		     1		pop eax			; restore EAX
+ 00000019  9D		     1		popfd			; restore EFLAGS
+
+ 0000001A  90				nop
+
+					toUpper testCharacter1
+ 0000001B  9C		     1		pushfd			; save the EFLAGS register - we will be subtracting, which will change EFLAGS
+ 0000001C  50		     1		push eax		; save EAX - we use AL to hold the character we are converting to uppercase
+ 0000001D  A0 00000000 R     1		mov al, BYTE PTR [testCharacter1]
+ 00000022  3C 61	     1		cmp al, 'a'		; (character < 'a') ?
+ 00000024  72 0C	     1		jb ??0001
+ 00000026  3C 7A	     1		cmp al, 'z'		; (character > 'z') ?
+ 00000028  77 08	     1		ja ??0001
+ 0000002A  83 E8 20	     1		sub eax, 20h
+ 0000002D  A2 00000000 R     1		mov BYTE PTR [testCharacter1], al
+ 00000032		     1	??0001:
+ 00000032  58		     1		pop eax			; restore EAX
+ 00000033  9D		     1		popfd			; restore EFLAGS
+
+ 00000034  90				nop
+
+ 00000035  B8 00000000			mov eax, 0
+ 0000003A  C3				ret
+ 0000003B			main	ENDP
 
 				END
 	
-Microsoft (R) Macro Assembler Version 11.00.50727.1	    02/11/15 15:29:14
+Microsoft (R) Macro Assembler Version 11.00.61030.0	    11/03/16 18:06:25
 main.asm						     Symbols 2 - 1
 
 
+
+
+Macros:
+
+                N a m e                 Type
+
+toUpper  . . . . . . . . . . . .	Proc
 
 
 Segments and Groups:
@@ -39,15 +136,17 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 00000000 Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 00000006 Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 00000002 Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 0000003B Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
 
                 N a m e                 Type     Value    Attr
 
-main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000006 Public
+main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 0000003B Public
+  ??0000 . . . . . . . . . . . .	L Near	 00000018 _TEXT	
+  ??0001 . . . . . . . . . . . .	L Near	 00000032 _TEXT	
 
 
 Symbols:
@@ -63,6 +162,8 @@ Symbols:
 @fardata?  . . . . . . . . . . .	Text   	 FLAT
 @fardata . . . . . . . . . . . .	Text   	 FLAT
 @stack . . . . . . . . . . . . .	Text   	 FLAT
+testCharacter1 . . . . . . . . .	Byte	 00000000 _DATA	
+testCharacter2 . . . . . . . . .	Byte	 00000001 _DATA	
 
 	   0 Warnings
 	   0 Errors
